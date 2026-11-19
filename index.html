@@ -93,15 +93,15 @@ b.onclick=()=>{T.value=(T.value.trim()+' '+w).trim()+' '};$('#chips').append(b)}
 $('#hi').onclick=()=>{$('#sndmsg').textContent='';new Audio('assets/monster-hej.mp3').play().catch(()=>$('#sndmsg').textContent='Lydfilen er ikke lagt ind endnu.')};
 
 // mikrofon
-const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec,on=false,base='';
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec,on=false,want=false,base='';
 $('#mic').onclick=()=>{
  if(!SR){say('Mikrofonen virker ikke i denne browser. Brug Chrome, eller skriv selv.');return}
- if(on){rec.stop();return}
- rec=new SR();rec.lang='da-DK';rec.continuous=true;rec.interimResults=true;base=T.value?T.value.trim()+' ':'';
+ if(on||want){want=false;rec.stop();return}
+ rec=new SR();rec.lang='da-DK';rec.continuous=true;rec.interimResults=true;base=T.value?T.value.trim()+' ':'';want=true;
  rec.onresult=e=>{let x='';for(const r of e.results)x+=r[0].transcript;T.value=base+x};
  rec.onstart=()=>{on=true;$('#mic').textContent='Stop';say('Jeg lytter ...')};
- rec.onend=()=>{on=false;$('#mic').textContent='Lyt til barnet';say('Klar. Den voksne retter i teksten, hvis noget er forkert.')};
- rec.onerror=e=>say('Mikrofonfejl: '+e.error);rec.start()};
+ rec.onend=()=>{if(want){base=T.value.trim()+' ';try{rec.start();return}catch(e){}}want=false;on=false;$('#mic').textContent='Lyt til barnet';say('Klar. Den voksne retter i teksten, hvis noget er forkert.')};
+ rec.onerror=e=>{if(e.error!='no-speech'&&e.error!='aborted'){want=false;say('Mikrofonfejl: '+e.error)}};rec.start()};
 
 // opsætning
 $('#setup').onclick=()=>{$('#k').value=gt('k')||'';$('#mo').value=gt('m')||'gpt-image-2';$('#q').value=gt('q')||'medium';$('#dlg').showModal()};
@@ -110,7 +110,7 @@ $('#sv').onclick=()=>{st('k',$('#k').value.trim());st('m',$('#mo').value.trim())
 // prompten: barnets ord først, så regler, lys og det skjulte tidstema
 const prompt=txt=>`A small, friendly fantasy creature brought to life from a child's own description (in Danish, highest priority): "${txt}"
 
-Rules: Show exactly what the child describes: colours, eyes, legs, wings, teeth, abilities. Do not add body parts the child did not mention; if the description is short, keep the creature simple and charming instead of inventing details. Materials such as LEGO bricks or natural things may become fur, scales, bark, moss or crystal if it fits. Silly, strange, funny, cool, magical or a little mighty is fine, but always suitable for children aged 3-9: no horror, blood, slime, injury or threatening expression. The creature must look alive, curious and full of personality, so the child instantly recognises their own idea.
+Rules: Show exactly what the child describes: colours, eyes, legs, wings, teeth, abilities. If the child mentions teeth, including big, many, sharp or scary ones, always show them clearly, but as big, funny, slightly crooked cartoon teeth in a grinning, friendly face, never realistic or menacing. Do not add body parts the child did not mention; if the description is short, keep the creature simple and charming instead of inventing details. Materials such as LEGO bricks or natural things may become fur, scales, bark, moss or crystal if it fits. Silly, strange, funny, cool, magical or a little mighty is fine, but always suitable for children aged 3-9: no horror, blood, slime, injury or threatening expression. The creature must look alive, curious and full of personality, so the child instantly recognises their own idea.
 
 Theme Time, kept subtle: the surroundings quietly hint at time, for example a tiny glowing hourglass, moss growing in clock-like rings, a sundial stone, fireflies hanging still in the air, or soft clock-face patterns in the light. Time appears only in the setting or as a small magical detail, never as a change to the creature's body.
 
